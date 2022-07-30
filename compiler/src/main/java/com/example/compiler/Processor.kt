@@ -38,17 +38,21 @@ class Processor : AbstractProcessor() {
         roundEnv: RoundEnvironment
     ): Boolean {
         logInfo("Processor.process 方法被调用")
-        roundEnv.getElementsAnnotatedWith(ExtractField::class.java)
-            .forEach { element ->
-                if (element.kind != ElementKind.CLASS) {
-                    processingEnv.messager.printMessage(
-                        Diagnostic.Kind.ERROR,
-                        "Only classes can be annotated"
-                    )
-                    return@forEach
-                }
-                processAnnotation(element)
+        val set = roundEnv.getElementsAnnotatedWith(ExtractField::class.java)
+        if (set == null || set.isEmpty()) {
+            return false
+        }
+
+        set.forEach { element ->
+            if (element.kind != ElementKind.CLASS) {
+                processingEnv.messager.printMessage(
+                    Diagnostic.Kind.ERROR,
+                    "Only classes can be annotated"
+                )
+                return@forEach
             }
+            processAnnotation(element)
+        }
         return true
     }
 
@@ -73,7 +77,7 @@ class Processor : AbstractProcessor() {
                 // 向类里添加字段的 get 方法
                 addGetFunc(classBuilder, childElement)
                 // 向类里添加字段的 set 方法
-                addSetFunc(classBuilder,childElement)
+                addSetFunc(classBuilder, childElement)
             }
         }
         // 向 fileBuilder 表示的 kotlin 文件中写入 classBuilder 类
